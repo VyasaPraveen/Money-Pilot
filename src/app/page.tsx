@@ -5,26 +5,51 @@ import PinLogin from '@/components/PinLogin';
 import Dashboard from '@/components/Dashboard';
 import AddTransaction from '@/components/AddTransaction';
 import History from '@/components/History';
+import Settings from '@/components/Settings';
 import BottomNav from '@/components/BottomNav';
+import type { TabId, User } from '@/lib/constants';
+import { getUserById } from '@/lib/userService';
 
 export default function Home() {
-  const [user, setUser] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [user, setUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [restoring, setRestoring] = useState(true);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('currentUser');
-    if (saved) setUser(saved);
+    const savedId = sessionStorage.getItem('currentUserId');
+    if (savedId) {
+      getUserById(savedId)
+        .then((u) => {
+          if (u) setUser(u);
+          else sessionStorage.removeItem('currentUserId');
+        })
+        .catch(() => {
+          sessionStorage.removeItem('currentUserId');
+        })
+        .finally(() => setRestoring(false));
+    } else {
+      setRestoring(false);
+    }
   }, []);
 
-  const handleLogin = (name: string) => {
-    setUser(name);
-    sessionStorage.setItem('currentUser', name);
+  const handleLogin = (u: User) => {
+    setUser(u);
+    sessionStorage.setItem('currentUserId', u.id);
   };
 
   const handleLogout = () => {
     setUser(null);
-    sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentUserId');
+    setActiveTab('dashboard');
   };
+
+  if (restoring) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!user) return <PinLogin onLogin={handleLogin} />;
 
@@ -33,6 +58,7 @@ export default function Home() {
       {activeTab === 'dashboard' && <Dashboard user={user} onLogout={handleLogout} />}
       {activeTab === 'add' && <AddTransaction user={user} />}
       {activeTab === 'history' && <History />}
+      {activeTab === 'settings' && <Settings user={user} onUserUpdate={setUser} />}
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );

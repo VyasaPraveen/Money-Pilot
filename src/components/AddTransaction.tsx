@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
@@ -8,27 +8,45 @@ import {
   INCOME_CATEGORIES,
   ACCOUNTS,
   CATEGORY_COLORS,
+  PAYMENT_MODES,
 } from '@/lib/constants';
-import { Check, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import type { User } from '@/lib/constants';
+import { Check, AlertCircle, MinusCircle, PlusCircle } from 'lucide-react';
 
-export default function AddTransaction({ user }: { user: string }) {
+export default function AddTransaction({ user }: { user: User }) {
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [account, setAccount] = useState('Personal');
   const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
   const [savedInfo, setSavedInfo] = useState({ amount: '', category: '' });
 
-  const categories =
-    type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const enabledExpenseCategories = useMemo(
+    () => EXPENSE_CATEGORIES.filter((c) => !user.settings.disabledExpenseCategories.includes(c)),
+    [user.settings.disabledExpenseCategories]
+  );
+  const enabledIncomeCategories = useMemo(
+    () => INCOME_CATEGORIES.filter((c) => !user.settings.disabledIncomeCategories.includes(c)),
+    [user.settings.disabledIncomeCategories]
+  );
+  const enabledPaymentModes = useMemo(
+    () => PAYMENT_MODES.filter((m) => !user.settings.disabledPaymentModes.includes(m)),
+    [user.settings.disabledPaymentModes]
+  );
+
+  const categories = type === 'expense' ? enabledExpenseCategories : enabledIncomeCategories;
+
+  const [paymentMode, setPaymentMode] = useState(() => enabledPaymentModes[0] || 'Cash');
 
   const handleSubmit = async () => {
     if (!category || !amount || Number(amount) <= 0) return;
 
     setSaving(true);
+    setError('');
     try {
       const d = new Date(date);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -38,11 +56,12 @@ export default function AddTransaction({ user }: { user: string }) {
         category,
         amount: Number(amount),
         account: type === 'expense' ? account : 'Personal',
-        addedBy: user,
+        addedBy: user.name,
         date,
         note,
         monthKey,
         createdAt: Date.now(),
+        paymentMode,
       });
 
       setSavedInfo({ amount, category });
@@ -53,10 +72,12 @@ export default function AddTransaction({ user }: { user: string }) {
         setAmount('');
         setNote('');
         setAccount('Personal');
+        setPaymentMode(enabledPaymentModes[0] || 'Cash');
+        setDate(new Date().toISOString().split('T')[0]);
         setSuccess(false);
       }, 1500);
-    } catch (err) {
-      console.error('Error adding transaction:', err);
+    } catch {
+      setError('Failed to save. Check your connection and try again.');
     } finally {
       setSaving(false);
     }
@@ -80,6 +101,14 @@ export default function AddTransaction({ user }: { user: string }) {
     <div className="max-w-lg mx-auto px-4 pt-6">
       <h1 className="text-2xl font-bold text-slate-800 mb-6">Add Transaction</h1>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+          <AlertCircle size={18} className="text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
       {/* Type Toggle */}
       <div className="flex bg-slate-100 rounded-2xl p-1 mb-6">
         <button
@@ -93,7 +122,7 @@ export default function AddTransaction({ user }: { user: string }) {
               : 'text-slate-500'
           }`}
         >
-          <ArrowUpCircle size={18} /> Expense
+          <MinusCircle size={18} /> Expense
         </button>
         <button
           onClick={() => {
@@ -106,7 +135,7 @@ export default function AddTransaction({ user }: { user: string }) {
               : 'text-slate-500'
           }`}
         >
-          <ArrowDownCircle size={18} /> Income
+          <PlusCircle size={18} /> Income
         </button>
       </div>
 
@@ -176,6 +205,28 @@ export default function AddTransaction({ user }: { user: string }) {
           </div>
         </div>
       )}
+
+      {/* Payment Mode */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3 block">
+          Payment Mode
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {enabledPaymentModes.map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setPaymentMode(mode)}
+              className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                paymentMode === mode
+                  ? 'bg-violet-500 text-white shadow-lg scale-105'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Date */}
       <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">

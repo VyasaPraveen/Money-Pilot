@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
   collection,
   query,
@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Transaction, CATEGORY_COLORS } from '@/lib/constants';
+import { useMonthNavigation } from '@/hooks/useMonthNavigation';
 import {
   Trash2,
   ChevronLeft,
@@ -26,15 +27,11 @@ const MONTHS = [
 
 export default function History() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [month, setMonth] = useState(new Date().getMonth());
-  const [year, setYear] = useState(new Date().getFullYear());
+  const { month, year, monthKey, prevMonth, nextMonth } = useMonthNavigation();
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [loading, setLoading] = useState(true);
-
-  const monthKey = useMemo(
-    () => `${year}-${String(month + 1).padStart(2, '0')}`,
-    [month, year]
-  );
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -59,26 +56,14 @@ export default function History() {
       : transactions.filter((t) => t.type === filter);
 
   const handleDelete = async (id: string) => {
-    if (confirm('Delete this transaction?')) {
+    setDeleting(true);
+    try {
       await deleteDoc(doc(db, 'transactions', id));
-    }
-  };
-
-  const prevMonth = () => {
-    if (month === 0) {
-      setMonth(11);
-      setYear((y) => y - 1);
-    } else {
-      setMonth((m) => m - 1);
-    }
-  };
-
-  const nextMonth = () => {
-    if (month === 11) {
-      setMonth(0);
-      setYear((y) => y + 1);
-    } else {
-      setMonth((m) => m + 1);
+    } catch {
+      alert('Failed to delete. Please try again.');
+    } finally {
+      setDeleting(false);
+      setDeleteId(null);
     }
   };
 
@@ -93,22 +78,24 @@ export default function History() {
 
       {/* Month Selector */}
       <div className="flex items-center justify-between bg-white rounded-2xl p-3 shadow-sm mb-4">
-        <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-slate-100">
+        <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-slate-100" aria-label="Previous month">
           <ChevronLeft size={18} />
         </button>
         <span className="font-semibold text-slate-700">
           {MONTHS[month]} {year}
         </span>
-        <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-slate-100">
+        <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-slate-100" aria-label="Next month">
           <ChevronRight size={18} />
         </button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
+      <div className="flex bg-slate-100 rounded-xl p-1 mb-4" role="tablist">
         {(['all', 'expense', 'income'] as const).map((f) => (
           <button
             key={f}
+            role="tab"
+            aria-selected={filter === f}
             onClick={() => setFilter(f)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
               filter === f
@@ -165,6 +152,11 @@ export default function History() {
                     EM
                   </span>
                 )}
+                {t.paymentMode && (
+                  <span className="ml-1.5 px-1.5 py-0.5 bg-violet-100 text-violet-600 rounded text-[10px] font-medium">
+                    {t.paymentMode}
+                  </span>
+                )}
               </p>
               {t.note && (
                 <p className="text-xs text-slate-400 truncate">{t.note}</p>
@@ -183,8 +175,9 @@ export default function History() {
 
             {/* Delete */}
             <button
-              onClick={() => handleDelete(t.id)}
+              onClick={() => setDeleteId(t.id)}
               className="p-2 rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-400 transition-colors"
+              aria-label={`Delete ${t.category} transaction`}
             >
               <Trash2 size={16} />
             </button>
@@ -212,6 +205,8 @@ export default function History() {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              role="img"
+              aria-label="No transactions"
             >
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
@@ -220,6 +215,32 @@ export default function History() {
             </svg>
           </div>
           <p className="text-slate-500 font-medium">No transactions found</p>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl mb-4">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Delete transaction?</h3>
+            <p className="text-sm text-slate-500 mb-6">This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteId(null)}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteId)}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-semibold text-sm hover:bg-red-600 transition-colors"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

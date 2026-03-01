@@ -1,6 +1,11 @@
 const CACHE_NAME = 'money-pilot-v1';
 
-self.addEventListener('install', () => {
+const PRE_CACHE_URLS = ['/', '/manifest.json', '/icons/logo.png', '/icons/icon-192x192.png', '/icons/icon-512x512.png'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRE_CACHE_URLS))
+  );
   self.skipWaiting();
 });
 

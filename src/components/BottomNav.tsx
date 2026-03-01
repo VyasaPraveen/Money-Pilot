@@ -1,16 +1,18 @@
 'use client';
 
-import { LayoutDashboard, PlusCircle, History as HistoryIcon } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History as HistoryIcon, Settings as SettingsIcon } from 'lucide-react';
+import type { TabId } from '@/lib/constants';
 
 interface Props {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
 }
 
-const tabs = [
+const tabs: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
   { id: 'add', label: 'Add', icon: PlusCircle },
   { id: 'history', label: 'History', icon: HistoryIcon },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 export default function BottomNav({ activeTab, onTabChange }: Props) {
@@ -21,7 +23,7 @@ export default function BottomNav({ activeTab, onTabChange }: Props) {
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-5 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all ${
               activeTab === tab.id ? 'text-violet-600' : 'text-slate-400'
             }`}
           >

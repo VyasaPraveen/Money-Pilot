@@ -17,12 +17,16 @@ export const EXPENSE_CATEGORIES = [
 
 export const INCOME_CATEGORIES = ['Adspark', 'Classes'] as const;
 
-export const USERS = [
-  { name: 'Praveen', pin: '1991' },
-  { name: 'Sravani', pin: '1996' },
-] as const;
-
 export const ACCOUNTS = ['Personal', 'EM Office'] as const;
+
+export const PAYMENT_MODES = [
+  'Cash',
+  'PhonePe',
+  'Google Pay',
+  'Bank Transfer',
+  'Credit Card',
+  'Other',
+] as const;
 
 export const CATEGORY_COLORS: Record<string, string> = {
   'Gold Savings': '#f59e0b',
@@ -43,6 +47,28 @@ export const CATEGORY_COLORS: Record<string, string> = {
   'Classes': '#3b82f6',
 };
 
+export type TabId = 'dashboard' | 'add' | 'history' | 'settings';
+
+export interface UserSettings {
+  disabledExpenseCategories: string[];
+  disabledIncomeCategories: string[];
+  disabledPaymentModes: string[];
+}
+
+export interface User {
+  id: string;
+  name: string;
+  pin: string;
+  createdAt: number;
+  settings: UserSettings;
+}
+
+export const DEFAULT_USER_SETTINGS: UserSettings = {
+  disabledExpenseCategories: [],
+  disabledIncomeCategories: [],
+  disabledPaymentModes: [],
+};
+
 export interface Transaction {
   id: string;
   type: 'income' | 'expense';
@@ -54,4 +80,5 @@ export interface Transaction {
   note: string;
   monthKey: string;
   createdAt: number;
+  paymentMode?: string;
 }

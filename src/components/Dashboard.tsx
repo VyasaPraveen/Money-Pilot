@@ -3,7 +3,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import type { User } from '@/lib/constants';
 import { Transaction, CATEGORY_COLORS } from '@/lib/constants';
+import { useMonthNavigation } from '@/hooks/useMonthNavigation';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -15,21 +17,25 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+const MODE_COLORS: Record<string, string> = {
+  'Cash': '#64748b',
+  'PhonePe': '#6366f1',
+  'Google Pay': '#3b82f6',
+  'Bank Transfer': '#8b5cf6',
+  'Credit Card': '#ec4899',
+  'Other': '#78716c',
+  'Unknown': '#94a3b8',
+};
+
 interface Props {
-  user: string;
+  user: User;
   onLogout: () => void;
 }
 
 export default function Dashboard({ user, onLogout }: Props) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [month, setMonth] = useState(new Date().getMonth());
-  const [year, setYear] = useState(new Date().getFullYear());
+  const { month, year, monthKey, prevMonth, nextMonth } = useMonthNavigation();
   const [loading, setLoading] = useState(true);
-
-  const monthKey = useMemo(
-    () => `${year}-${String(month + 1).padStart(2, '0')}`,
-    [month, year]
-  );
 
   useEffect(() => {
     setLoading(true);
@@ -46,8 +52,14 @@ export default function Dashboard({ user, onLogout }: Props) {
     return () => unsub();
   }, [monthKey]);
 
-  const expenses = transactions.filter((t) => t.type === 'expense');
-  const incomes = transactions.filter((t) => t.type === 'income');
+  const expenses = useMemo(
+    () => transactions.filter((t) => t.type === 'expense'),
+    [transactions]
+  );
+  const incomes = useMemo(
+    () => transactions.filter((t) => t.type === 'income'),
+    [transactions]
+  );
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0);
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0);
   const balance = totalIncome - totalExpense;
@@ -79,25 +91,42 @@ export default function Dashboard({ user, onLogout }: Props) {
     .filter((t) => t.account === 'EM Office')
     .reduce((s, t) => s + t.amount, 0);
 
-  const prevMonth = () => {
-    if (month === 0) {
-      setMonth(11);
-      setYear((y) => y - 1);
-    } else {
-      setMonth((m) => m - 1);
-    }
-  };
-
-  const nextMonth = () => {
-    if (month === 11) {
-      setMonth(0);
-      setYear((y) => y + 1);
-    } else {
-      setMonth((m) => m + 1);
-    }
-  };
+  const expenseByPaymentMode = useMemo(() => {
+    const map: Record<string, number> = {};
+    expenses.forEach((t) => {
+      const mode = t.paymentMode || 'Unknown';
+      map[mode] = (map[mode] || 0) + t.amount;
+    });
+    return Object.entries(map)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [expenses]);
 
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+
+  if (loading) {
+    return (
+      <div className="max-w-lg mx-auto px-4 pt-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-slate-500 text-sm">Welcome back,</p>
+            <h1 className="text-2xl font-bold text-slate-800">{user.name}</h1>
+          </div>
+          <button
+            onClick={onLogout}
+            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors"
+            aria-label="Log out"
+          >
+            <LogOut size={20} className="text-slate-600" />
+          </button>
+        </div>
+        <div className="text-center py-12">
+          <div className="w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
+          <p className="text-slate-400 mt-3 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-6">
@@ -105,11 +134,12 @@ export default function Dashboard({ user, onLogout }: Props) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-slate-500 text-sm">Welcome back,</p>
-          <h1 className="text-2xl font-bold text-slate-800">{user}</h1>
+          <h1 className="text-2xl font-bold text-slate-800">{user.name}</h1>
         </div>
         <button
           onClick={onLogout}
           className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors"
+          aria-label="Log out"
         >
           <LogOut size={20} className="text-slate-600" />
         </button>
@@ -117,13 +147,13 @@ export default function Dashboard({ user, onLogout }: Props) {
 
       {/* Month Selector */}
       <div className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm mb-6">
-        <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-slate-100">
+        <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-slate-100" aria-label="Previous month">
           <ChevronLeft size={20} />
         </button>
         <h2 className="text-lg font-semibold text-slate-700">
           {MONTH_NAMES[month]} {year}
         </h2>
-        <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-slate-100">
+        <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-slate-100" aria-label="Next month">
           <ChevronRight size={20} />
         </button>
       </div>
@@ -175,6 +205,37 @@ export default function Dashboard({ user, onLogout }: Props) {
                 {fmt(emOfficeExpense)}
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Mode Breakdown */}
+      {expenseByPaymentMode.length > 0 && (
+        <div className="bg-white rounded-2xl p-4 shadow-sm mb-6">
+          <h3 className="text-sm font-semibold text-slate-600 mb-3">
+            Payment Modes
+          </h3>
+          <div className="space-y-2">
+            {expenseByPaymentMode.map((item) => {
+              const pct = totalExpense > 0 ? (item.value / totalExpense) * 100 : 0;
+              return (
+                <div key={item.name}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-slate-600">{item.name}</span>
+                    <span className="text-xs font-semibold text-slate-800">{fmt(item.value)}</span>
+                  </div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${pct}%`,
+                        backgroundColor: MODE_COLORS[item.name] || '#94a3b8',
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -274,18 +335,11 @@ export default function Dashboard({ user, onLogout }: Props) {
         </div>
       )}
 
-      {/* Loading / Empty States */}
-      {loading && (
-        <div className="text-center py-12">
-          <div className="w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="text-slate-400 mt-3 text-sm">Loading...</p>
-        </div>
-      )}
-
-      {!loading && transactions.length === 0 && (
+      {/* Empty State */}
+      {transactions.length === 0 && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="No data">
               <line x1="12" y1="20" x2="12" y2="10" />
               <line x1="18" y1="20" x2="18" y2="4" />
               <line x1="6" y1="20" x2="6" y2="16" />

@@ -1,5 +1,9 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+} from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -10,8 +14,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+if (globalThis.window !== undefined && (!firebaseConfig.apiKey || !firebaseConfig.projectId)) {
+  throw new Error(
+    'Missing Firebase config. Copy .env.local.example to .env.local and fill in your values.'
+  );
+}
 
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({}),
-});
+const app =
+  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+function getDb() {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({}),
+    });
+  } catch {
+    return getFirestore(app);
+  }
+}
+
+export const db = getDb();
