@@ -1,21 +1,18 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import type { User } from '@/lib/constants';
-import { loginByPin, registerUser } from '@/lib/userService';
+import { loginByPin } from '@/lib/userService';
 
 interface Props {
   onLogin: (user: User) => void;
 }
 
 export default function PinLogin({ onLogin }: Props) {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [pin, setPin] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [shaking, setShaking] = useState(false);
   const [loading, setLoading] = useState(false);
-  const nameRef = useRef<HTMLInputElement>(null);
 
   const showError = (msg: string) => {
     setError(msg);
@@ -33,27 +30,10 @@ export default function PinLogin({ onLogin }: Props) {
       if (user) {
         onLogin(user);
       } else {
-        showError('No account found. Check your PIN or create one.');
+        showError('Invalid PIN. Please try again.');
       }
     } catch {
       showError('Connection error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async (enteredPin: string) => {
-    if (!name.trim()) {
-      showError('Enter your name first.');
-      nameRef.current?.focus();
-      return;
-    }
-    setLoading(true);
-    try {
-      const user = await registerUser(name.trim(), enteredPin);
-      onLogin(user);
-    } catch (err) {
-      showError(err instanceof Error ? err.message : 'Registration failed. Try again.');
     } finally {
       setLoading(false);
     }
@@ -66,24 +46,13 @@ export default function PinLogin({ onLogin }: Props) {
     setError('');
 
     if (newPin.length === 4) {
-      if (mode === 'login') {
-        handleLogin(newPin);
-      } else {
-        handleRegister(newPin);
-      }
+      handleLogin(newPin);
     }
   };
 
   const handleBackspace = () => {
     if (loading) return;
     setPin(pin.slice(0, -1));
-    setError('');
-  };
-
-  const switchMode = () => {
-    setMode(mode === 'login' ? 'register' : 'login');
-    setPin('');
-    setName('');
     setError('');
   };
 
@@ -101,24 +70,8 @@ export default function PinLogin({ onLogin }: Props) {
           className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg"
         />
         <h1 className="text-3xl font-bold text-white">Money Pilot</h1>
-        <p className="text-white/60 mt-1 text-sm">
-          {mode === 'login' ? 'Enter your PIN to continue' : 'Create your account'}
-        </p>
+        <p className="text-white/60 mt-1 text-sm">Enter your PIN to continue</p>
       </div>
-
-      {/* Name Input (Register mode) */}
-      {mode === 'register' && (
-        <input
-          ref={nameRef}
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your name"
-          maxLength={20}
-          className="w-64 px-4 py-3 mb-6 rounded-xl bg-white/10 text-white placeholder-white/40 text-center text-lg font-medium outline-none focus:bg-white/20 transition-colors backdrop-blur-sm"
-          autoFocus
-        />
-      )}
 
       {/* PIN Dots */}
       <div className={`flex gap-4 mb-3 ${shaking ? 'animate-shake' : ''}`} role="status" aria-label={`${pin.length} of 4 digits entered`}>
@@ -137,9 +90,7 @@ export default function PinLogin({ onLogin }: Props) {
       </div>
 
       {/* Subtitle */}
-      <p className="text-white/40 text-xs mb-8">
-        {mode === 'register' ? 'Choose a 4-digit PIN' : 'Enter 4-digit PIN'}
-      </p>
+      <p className="text-white/40 text-xs mb-8">Enter 4-digit PIN</p>
 
       {/* Loading */}
       {loading && (
@@ -185,14 +136,6 @@ export default function PinLogin({ onLogin }: Props) {
         <p className="text-red-300 text-sm mt-5 text-center max-w-[280px]" role="alert">{error}</p>
       )}
 
-      {/* Mode Switch */}
-      <button
-        onClick={switchMode}
-        disabled={loading}
-        className="mt-8 text-white/50 text-sm hover:text-white/80 transition-colors"
-      >
-        {mode === 'login' ? 'Create new account' : 'Back to login'}
-      </button>
     </div>
   );
 }

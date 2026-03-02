@@ -18,6 +18,7 @@ export default function AddTransaction({ user }: { user: User }) {
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [account, setAccount] = useState('Personal');
+  const [customCategory, setCustomCategory] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
@@ -42,8 +43,11 @@ export default function AddTransaction({ user }: { user: User }) {
 
   const [paymentMode, setPaymentMode] = useState(() => enabledPaymentModes[0] || 'Cash');
 
+  const isOtherExpense = type === 'expense' && category === 'Other';
+
   const handleSubmit = async () => {
     if (!category || !amount || Number(amount) <= 0) return;
+    if (isOtherExpense && !customCategory.trim()) return;
 
     setSaving(true);
     setError('');
@@ -51,7 +55,7 @@ export default function AddTransaction({ user }: { user: User }) {
       const d = new Date(date);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-      await addDoc(collection(db, 'transactions'), {
+      const txData: Record<string, unknown> = {
         type,
         category,
         amount: Number(amount),
@@ -62,13 +66,19 @@ export default function AddTransaction({ user }: { user: User }) {
         monthKey,
         createdAt: Date.now(),
         paymentMode,
-      });
+      };
+      if (isOtherExpense) {
+        txData.customCategory = customCategory.trim();
+      }
 
-      setSavedInfo({ amount, category });
+      await addDoc(collection(db, 'transactions'), txData);
+
+      setSavedInfo({ amount, category: isOtherExpense ? customCategory.trim() : category });
       setSuccess(true);
 
       setTimeout(() => {
         setCategory('');
+        setCustomCategory('');
         setAmount('');
         setNote('');
         setAccount('Personal');
@@ -180,6 +190,24 @@ export default function AddTransaction({ user }: { user: User }) {
         </div>
       </div>
 
+      {/* Custom Category Input — "Other" expense */}
+      {isOtherExpense && (
+        <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+          <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+            What is this expense?
+          </label>
+          <input
+            type="text"
+            value={customCategory}
+            onChange={(e) => setCustomCategory(e.target.value)}
+            placeholder="e.g. Doctor visit, Gift..."
+            maxLength={40}
+            className="w-full text-slate-800 mt-1 outline-none text-lg bg-transparent"
+            autoFocus
+          />
+        </div>
+      )}
+
       {/* Account Selection — Expenses only */}
       {type === 'expense' && (
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
@@ -258,9 +286,9 @@ export default function AddTransaction({ user }: { user: User }) {
       {/* Submit Button */}
       <button
         onClick={handleSubmit}
-        disabled={!category || !amount || Number(amount) <= 0 || saving}
+        disabled={!category || !amount || Number(amount) <= 0 || (isOtherExpense && !customCategory.trim()) || saving}
         className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
-          !category || !amount || Number(amount) <= 0
+          !category || !amount || Number(amount) <= 0 || (isOtherExpense && !customCategory.trim())
             ? 'bg-slate-200 text-slate-400'
             : type === 'expense'
               ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-200 active:scale-[0.98]'

@@ -4,7 +4,6 @@ import {
   where,
   getDocs,
   getDoc,
-  addDoc,
   doc,
   updateDoc,
 } from 'firebase/firestore';
@@ -24,30 +23,6 @@ export async function loginByPin(pin: string): Promise<User | null> {
     pin: data.pin,
     createdAt: data.createdAt,
     settings: data.settings ?? DEFAULT_USER_SETTINGS,
-  };
-}
-
-export async function registerUser(name: string, pin: string): Promise<User> {
-  const existing = await loginByPin(pin);
-  if (existing) throw new Error('PIN already in use. Choose a different PIN.');
-
-  const trimmedName = name.trim();
-  if (!trimmedName) throw new Error('Name is required.');
-  if (pin.length !== 4) throw new Error('PIN must be 4 digits.');
-
-  const docRef = await addDoc(collection(db, 'users'), {
-    name: trimmedName,
-    pin,
-    createdAt: Date.now(),
-    settings: DEFAULT_USER_SETTINGS,
-  });
-
-  return {
-    id: docRef.id,
-    name: trimmedName,
-    pin,
-    createdAt: Date.now(),
-    settings: DEFAULT_USER_SETTINGS,
   };
 }
 

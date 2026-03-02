@@ -143,7 +143,7 @@ export default function History() {
             {/* Details */}
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-slate-800 text-sm">
-                {t.category}
+                {t.category === 'Other' && t.customCategory ? t.customCategory : t.category}
               </p>
               <p className="text-xs text-slate-400">
                 {t.addedBy} &middot; {formatDate(t.date)}

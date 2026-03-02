@@ -81,4 +81,5 @@ export interface Transaction {
   monthKey: string;
   createdAt: number;
   paymentMode?: string;
+  customCategory?: string;
 }
