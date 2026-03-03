@@ -170,6 +170,8 @@ export default function Dashboard({ user, onLogout }: Props) {
   const yearlyTotalExpense = yearlyData.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const yearlyTotalIncome = yearlyData.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
 
+  const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+
   // Monthly summary insights
   const summaryInsights = useMemo(() => {
     const insights: string[] = [];
@@ -202,8 +204,6 @@ export default function Dashboard({ user, onLogout }: Props) {
       return { ...goal, current: spent, pct: goal.monthlyTarget > 0 ? Math.min(100, Math.round((spent / goal.monthlyTarget) * 100)) : 0 };
     });
   }, [savingsGoals, expenses]);
-
-  const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
   const changeYear = (delta: number) => {
     setYear((y: number) => y + delta);
