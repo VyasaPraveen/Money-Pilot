@@ -8,6 +8,7 @@ import {
   INCOME_CATEGORIES,
   ACCOUNTS,
   CATEGORY_COLORS,
+  CATEGORY_ICONS,
   PAYMENT_MODES,
 } from '@/lib/constants';
 import type { User } from '@/lib/constants';
@@ -109,7 +110,7 @@ export default function AddTransaction({ user }: { user: User }) {
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-6">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">Add Transaction</h1>
+      <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Add Transaction</h1>
 
       {/* Error Banner */}
       {error && (
@@ -120,7 +121,7 @@ export default function AddTransaction({ user }: { user: User }) {
       )}
 
       {/* Type Toggle */}
-      <div className="flex bg-slate-100 rounded-2xl p-1 mb-6">
+      <div className="flex bg-slate-100 dark:bg-slate-800 rounded-2xl p-1 mb-6">
         <button
           onClick={() => {
             setType('expense');
@@ -150,8 +151,8 @@ export default function AddTransaction({ user }: { user: User }) {
       </div>
 
       {/* Amount */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm mb-4">
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
           Amount (₹)
         </label>
         <input
@@ -159,13 +160,13 @@ export default function AddTransaction({ user }: { user: User }) {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
-          className="w-full text-3xl font-bold text-slate-800 mt-1 outline-none bg-transparent"
+          className="w-full text-3xl font-bold text-slate-800 dark:text-white mt-1 outline-none bg-transparent"
         />
       </div>
 
       {/* Category Selection */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3 block">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm mb-4">
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3 block">
           Category
         </label>
         <div className="flex flex-wrap gap-2">
@@ -176,7 +177,7 @@ export default function AddTransaction({ user }: { user: User }) {
               className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
                 category === cat
                   ? 'text-white shadow-lg scale-105'
-                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                  : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'
               }`}
               style={
                 category === cat
@@ -184,7 +185,7 @@ export default function AddTransaction({ user }: { user: User }) {
                   : {}
               }
             >
-              {cat}
+              {CATEGORY_ICONS[cat] || ''} {cat}
             </button>
           ))}
         </div>
@@ -192,8 +193,8 @@ export default function AddTransaction({ user }: { user: User }) {
 
       {/* Custom Category Input — "Other" expense */}
       {isOtherExpense && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-          <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm mb-4">
+          <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
             What is this expense?
           </label>
           <input
@@ -202,7 +203,7 @@ export default function AddTransaction({ user }: { user: User }) {
             onChange={(e) => setCustomCategory(e.target.value)}
             placeholder="e.g. Doctor visit, Gift..."
             maxLength={40}
-            className="w-full text-slate-800 mt-1 outline-none text-lg bg-transparent"
+            className="w-full text-slate-800 dark:text-white mt-1 outline-none text-lg bg-transparent"
             autoFocus
           />
         </div>
@@ -210,8 +211,8 @@ export default function AddTransaction({ user }: { user: User }) {
 
       {/* Account Selection — Expenses only */}
       {type === 'expense' && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-          <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3 block">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm mb-4">
+          <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3 block">
             Paid From
           </label>
           <div className="flex gap-3">
@@ -235,8 +236,8 @@ export default function AddTransaction({ user }: { user: User }) {
       )}
 
       {/* Payment Mode */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3 block">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm mb-4">
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3 block">
           Payment Mode
         </label>
         <div className="flex flex-wrap gap-2">
@@ -257,21 +258,21 @@ export default function AddTransaction({ user }: { user: User }) {
       </div>
 
       {/* Date */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm mb-4">
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
           Date
         </label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full text-slate-800 mt-1 outline-none text-lg bg-transparent"
+          className="w-full text-slate-800 dark:text-white mt-1 outline-none text-lg bg-transparent"
         />
       </div>
 
       {/* Note */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm mb-6">
-        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm mb-6">
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
           Note (optional)
         </label>
         <input
@@ -279,7 +280,7 @@ export default function AddTransaction({ user }: { user: User }) {
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Add a note..."
-          className="w-full text-slate-800 mt-1 outline-none bg-transparent"
+          className="w-full text-slate-800 dark:text-white mt-1 outline-none bg-transparent"
         />
       </div>
 

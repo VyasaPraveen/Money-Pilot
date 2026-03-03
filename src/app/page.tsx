@@ -9,6 +9,7 @@ import Settings from '@/components/Settings';
 import BottomNav from '@/components/BottomNav';
 import type { TabId, User } from '@/lib/constants';
 import { getUserById } from '@/lib/userService';
+import { processRecurringExpenses } from '@/lib/recurringService';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -35,6 +36,10 @@ export default function Home() {
   const handleLogin = (u: User) => {
     setUser(u);
     sessionStorage.setItem('currentUserId', u.id);
+    // Process recurring expenses on login
+    if (u.settings.recurringExpenses?.length) {
+      processRecurringExpenses(u.id, u.name, u.settings.recurringExpenses).catch(() => {});
+    }
   };
 
   const handleLogout = () => {
@@ -54,7 +59,7 @@ export default function Home() {
   if (!user) return <PinLogin onLogin={handleLogin} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
       {activeTab === 'dashboard' && <Dashboard user={user} onLogout={handleLogout} />}
       {activeTab === 'add' && <AddTransaction user={user} />}
       {activeTab === 'history' && <History />}

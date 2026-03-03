@@ -27,5 +27,5 @@ export function useMonthNavigation() {
     }
   }, [month]);
 
-  return { month, year, monthKey, prevMonth, nextMonth };
+  return { month, year, monthKey, prevMonth, nextMonth, setMonth, setYear };
 }

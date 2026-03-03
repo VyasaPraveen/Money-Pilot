@@ -47,12 +47,51 @@ export const CATEGORY_COLORS: Record<string, string> = {
   'Classes': '#3b82f6',
 };
 
+export const CATEGORY_ICONS: Record<string, string> = {
+  'Gold Savings': '🥇',
+  'SIP Savings': '📈',
+  'Milk': '🥛',
+  'House Maintenance': '🏠',
+  'Internet bill': '🌐',
+  'Electricity': '⚡',
+  'Provisions': '🛒',
+  'Gas': '🔥',
+  'Flowers': '💐',
+  'Vegetables': '🥬',
+  'Fruits': '🍎',
+  'Petrol': '⛽',
+  'Miscellaneous': '📦',
+  'Other': '📝',
+  'Adspark': '💼',
+  'Classes': '📚',
+};
+
 export type TabId = 'dashboard' | 'add' | 'history' | 'settings';
+
+export interface RecurringExpense {
+  id: string;
+  category: string;
+  amount: number;
+  paymentMode: string;
+  account: string;
+  dayOfMonth: number;
+  note: string;
+  customCategory?: string;
+}
+
+export interface SavingsGoal {
+  category: string;
+  monthlyTarget: number;
+}
 
 export interface UserSettings {
   disabledExpenseCategories: string[];
   disabledIncomeCategories: string[];
   disabledPaymentModes: string[];
+  monthlyBudget?: number;
+  categoryBudgets?: Record<string, number>;
+  recurringExpenses?: RecurringExpense[];
+  savingsGoals?: SavingsGoal[];
 }
 
 export interface User {
